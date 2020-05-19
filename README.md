@@ -490,7 +490,7 @@ id 为文件id，例如使用当前的精确到秒的Unix时间戳
 ==>  {"cmd":"device_stats"}
 
 <==  {"res":"device_stats","code":0,"data":{
-       	"battery":100,                    //0-100
+        "battery":100,                    //0-100
         "bound":0,                        //0 未绑定，1已经绑定
         "charging":0,                     //0 未充电，1正在充电
         "storage":1024,                   //总存储容量 字节
@@ -508,9 +508,9 @@ id 为文件id，例如使用当前的精确到秒的Unix时间戳
         "ble_protocol_ver":20,            //ble  协议版本 4个字节无符号
         "sn":"ai1238189441",              //设备序列号 字符串
         "firm_ver":"ver 1.1.2"            //设备固件版本名称 字符串
-        "privacy":0	                     //隐私设置 0关闭，1开启
-        "wifi_p2p_address":"1.2.1.2"      //Wi-Fi直连 MAC 地址
-        "app_aec":0                       //需要app做降噪
+        "privacy":0,                      //隐私设置 0关闭，1开启
+        "wifi_p2p_address":"1.2.1.2",     //Wi-Fi直连 MAC 地址
+        "app_aec":0,                      //需要app做降噪
         "app_agc":0                       //需要app做增益
        }
       }
