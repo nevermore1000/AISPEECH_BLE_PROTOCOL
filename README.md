@@ -4,6 +4,8 @@
 >
 > 音频格式推荐 ogg-opus，压缩比1:8，采样率为16KHz，位深2字节，单通道
 
+<br/> 
+
 ### BLE连接
 
 1. 手机通过指定 Service UUID或者设备名称搜索到相应录音笔
@@ -12,9 +14,9 @@
 
 3. 调用 BluetoothGatt#getService 获取到Service，
 
-4. 再调用 BluetoothGattService#getCharacteristic 获取对应特征值
+4. 再调用 BluetoothGattService#getCharacteristic 获取对应特征值  
 
-   
+<br/> 
 
 ### BLE数据传输 - 实时录音 
 
@@ -40,8 +42,7 @@
 >
 >   音频流ID 4字节  Unix Time Stamp 精确到秒， 例如 1588921663
 
-
-
+<br/> 
 
 ### BLE数据传输 - 离线文件
 
@@ -71,7 +72,7 @@
 >
 >   校验位为 2字节 CRC16校验
 
-
+<br/> 
 
 ### BLE数据传输 - 固件升级
 
@@ -83,7 +84,7 @@
      UUID:0000b200-0000-1000-8000-00805f9b34fb
    Characteristic
      Name:OtaStream
-     Properties:NOTIFY
+     Properties:WRITE
      UUID:0000b201-0000-1000-8000-00805f9b34fb
 ```
 
@@ -99,7 +100,7 @@
 >
 >校验位 2字节 CRC16校验
 
-
+<br/> 
 
 ### BLE控制类命令 - 手机端发送，设备接收
 
@@ -116,6 +117,7 @@
       Properties:NOTIFY
       UUID:0000c202-0000-1000-8000-00805f9b34fb
 ```
+<br/> 
 
 | 协议版本 | 首帧标识 | 数据长度 | 校验位 | 数据区 | 第一帧之后 |
 | :---:|:---:|:---: | :---: | :---:| :---:|
@@ -129,7 +131,7 @@
 >
 >校验位为 2字节 CRC16校验
 
-
+<br/> 
 
 以下为控制命令的数据区的数据
 
