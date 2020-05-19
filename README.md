@@ -490,28 +490,28 @@ id 为文件id，例如使用当前的精确到秒的Unix时间戳
 ==>  {"cmd":"device_stats"}
 
 <==  {"res":"device_stats","code":0,"data":{
-       	"battery":100, 										  //0-100
-        "bound":0, 												  //0 未绑定，1已经绑定
-        "charging":0, 											  //0 未充电，1正在充电
-        "storage":1024, 										  //总存储容量 字节
-        "available_storage":1024, 							  //剩余存储 字节
-        "available_record_time":10000, 					  //设备预估可以录音时间 毫秒时间
-        "suport_wifi_p2p":0,									  //0 不支持Wi-Fi直连 1支持
-        "lang":"zh-cn", 										  //lang: 标准语言缩写
-        "time_zone":8, 											  //东8区GMT+8:00 用8表示，-8表示西8区
-        "time":1587982655000, 								  //Unix Time Stamp 毫秒
-        "audio_channel":1, 									  //音频通道数
-        "del_after_sync":0, 					              //0 同步后后不删除设备文件，1删除
-        "record_led":0, 				                    //0 录音中led灯不开启，1开启
-        "usb_mode":0, 											  //0 U盘模式关闭，1 开启
-        "recording":0, 											  //0 未正在录音，1 正在录音
-        "ble_protocol_ver":20,								  //ble  协议版本 4个字节无符号
-        "sn":"ai1238189441",							        //设备序列号 字符串
-        "firm_ver":"ver 1.1.2"                          //设备固件版本名称 字符串
-        "privacy":0												  //隐私设置 0关闭，1开启
-        "wifi_p2p_address":"1.2.1.2"						  //Wi-Fi直连 MAC 地址
-        "app_aec":0												  //需要app做降噪
-        "app_agc":0												  //需要app做增益
+       	"battery":100,                    //0-100
+        "bound":0,                        //0 未绑定，1已经绑定
+        "charging":0,                     //0 未充电，1正在充电
+        "storage":1024,                   //总存储容量 字节
+        "available_storage":1024,         //剩余存储 字节
+        "available_record_time":10000,    //设备预估可以录音时间 毫秒时间
+        "suport_wifi_p2p":0,              //0 不支持Wi-Fi直连 1支持
+        "lang":"zh-cn",                   //lang: 标准语言缩写
+        "time_zone":8,                    //东8区GMT+8:00 用8表示，-8表示西8区
+        "time":1587982655000,             //Unix Time Stamp 毫秒
+        "audio_channel":1,                //音频通道数
+        "del_after_sync":0,               //0 同步后后不删除设备文件，1删除
+        "record_led":0,                   //0 录音中led灯不开启，1开启
+        "usb_mode":0,                     //0 U盘模式关闭，1 开启
+        "recording":0,                    //0 未正在录音，1 正在录音
+        "ble_protocol_ver":20,            //ble  协议版本 4个字节无符号
+        "sn":"ai1238189441",              //设备序列号 字符串
+        "firm_ver":"ver 1.1.2"            //设备固件版本名称 字符串
+        "privacy":0	                      //隐私设置 0关闭，1开启
+        "wifi_p2p_address":"1.2.1.2"      //Wi-Fi直连 MAC 地址
+        "app_aec":0                       //需要app做降噪
+        "app_agc":0                       //需要app做增益
        }
       }
 
