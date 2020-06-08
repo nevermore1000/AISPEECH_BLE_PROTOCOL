@@ -1,1 +1,541 @@
 
+> Version 0.5.1
+>
+> 协议中默认MTU为20，实际中可能比这个数字要大，例如160
+>
+> 音频格式推荐 ogg-opus，压缩比1:8，采样率为16KHz，位深2字节，单通道
+
+<br/> 
+
+### BLE连接
+
+1. 手机通过指定 Service UUID或者设备名称搜索到相应录音笔
+
+2. 调用 BluetoothDevice#connectGatt 进行连接 
+
+3. 调用 BluetoothGatt#getService 获取到Service，
+
+4. 再调用 BluetoothGattService#getCharacteristic 获取对应特征值  
+
+<br/> 
+
+### BLE数据传输 - 实时录音 
+
+下面是音频二进制流读取的服务和特征值，UUID 可以自定
+
+````
+    Service
+      Name:AudioStream
+      UUID:0000s200-0000-1000-8000-00805f9b34fb
+    Characteristic
+      Name:AudioStream
+      Properties:NOTIFY
+      UUID:0000s201-0000-1000-8000-00805f9b34fb
+````
+
+| 协议版本 | 首帧标识 | 音频流ID | 数据区 | 第一帧之后 |
+| :---:|:---:|:---: | :---: | :---:|
+| Byte1~2 | Byte 3~8 | Byte 7~10 | Byte 10~20 |Byte 21~...|
+
+>   协议版本 2字节
+>
+>   首帧标识 6字节 为固定值 0x61696d742d30
+>
+>   音频流ID 4字节  Unix Time Stamp 精确到秒， 例如 1588921663
+
+<br/> 
+
+### BLE数据传输 - 离线文件
+
+下面是离线文件二进制流读取的服务和特征值，UUID 可以自定
+
+````
+    Service
+      Name:FileStream
+      UUID:0000s300-0000-1000-8000-00805f9b34fb
+    Characteristic
+      Name:FileStream
+      Properties:NOTIFY
+      UUID:0000s301-0000-1000-8000-00805f9b34fb
+````
+
+| 协议版本 | 首帧标识 |文件ID | 数据长度 | 校验位 | 数据区 | 第一帧之后 |
+| :---:|:---: | :---: | :---:| :---:| :---: | :---: |
+| Byte 1~2 | Byte 3~8 | Byte 9~12 | Byte 12~15 | Byte 16~17 | Byte 18~20 |Byte 21~...|
+
+>   协议版本 2字节
+>
+>   首帧标识 6字节 为固定值 0x61696d742d30
+>
+>   文件ID  4字节 Unix Time Stamp 精确到秒， 例如 1588921663
+>
+>   数据长度 4字节无符号 最大表示 3.99G Byte
+>
+>   校验位为 2字节 CRC16校验
+
+<br/> 
+
+### BLE数据传输 - 固件升级
+
+下面是音频二进制流读取的服务，UUID 可以自定义
+
+```
+   Service
+     Name:OtaStream
+     UUID:0000b200-0000-1000-8000-00805f9b34fb
+   Characteristic
+     Name:OtaStream
+     Properties:WRITE
+     UUID:0000b201-0000-1000-8000-00805f9b34fb
+```
+
+| 协议版本 | 首帧标识 | 数据长度 | 校验位 | 数据区 | 第一帧之后 |
+| :---:|:---:|:---: | :---: | :---: |:---:|
+| Byte 1~2 | Byte 3~8 | Byte 9~12 | Byte 13~14 | Byte 14~20 | Byte 21~... |
+
+>协议版本 2字节
+>
+>首帧标识 6字节 为固定值 0x61696d742d30
+>
+>数据长度 4字节无符号 最大表示 3.99G Byte
+>
+>校验位 2字节 CRC16校验
+
+<br/> 
+
+### BLE控制类命令 - 手机端发送，设备接收
+
+```
+    Service
+      Name:Command
+      UUID:0000c200-0000-1000-8000-00805f9b34fb
+    Characteristic
+      Name:Command
+      Properties:READ,WRITE
+      UUID:0000c201-0000-1000-8000-00805f9b34fb
+    Characteristic        
+      Name:Command
+      Properties:NOTIFY
+      UUID:0000c202-0000-1000-8000-00805f9b34fb
+```
+<br/> 
+
+| 协议版本 | 首帧标识 | 数据长度 | 校验位 | 数据区 | 第一帧之后 |
+| :---:|:---:|:---: | :---: | :---:| :---:|
+| Byte 1~2 | Byte 3~8 | Byte 9~12 | Byte 13~14 | Byte 15~20 | Byte 21~... |
+
+>协议版本 2字节
+>
+>首帧标识 6字节 为固定值 0x61696d742d30
+>
+>数据长度 4字节无符号 最大表示 3.99G Byte
+>
+>校验位为 2字节 CRC16校验
+
+<br/> 
+
+以下为控制命令的数据区的数据
+
+##### 开始实时录音
+
+```
+==> {"cmd":"start_record","mode":0} //mode :0录音文件在设备上保存，1不保存
+
+<== {"res":"start_record","code":0}
+
+同时BLE音频数据传输Service开始传输二进制流
+
+code=0  代表成功，其他错误码设备自定义返回到手机端
+```
+
+
+
+##### 结束实时录音
+
+```
+==> {"cmd":"stop_record"}
+
+<== {"res":"stop_record","code":0}
+```
+
+
+
+##### 获取文件列表
+
+```
+==> {"cmd":"get_dir"}
+
+<==  
+{
+ "res": "get_dir",
+ "code": 0,
+ "data": [{
+   "name": "filename1",          //文件名称 字符串。可以缺省
+   "size": 1024,                 //文件大小 字节
+   "id": 1587985539,             //文件ID 这里用的是时间戳
+   "sn":"aa213123141",           //序列号 字符串
+   "time_zone":8,                //东8区GMT+8:00 用8表示，-8表示西8区
+   "collection":0,               //收藏 0 是收藏的文件，1 不是
+   "duration":131418             //录音文件时长 毫秒
+  },
+  {
+   "name": "filename2",
+   "size": 2046,
+   "id": 1587982655
+    ...
+  }]
+}
+```
+
+
+
+##### 同步文件
+
+```
+==>  {"cmd":"sync_file","data":{"id":1587982655,"offset":1024}}
+
+<==  {"res":"sync_file","code":0}
+
+同时BLE音频数据传输Service开始传输二进制流
+id 为文件id，例如使用当前的精确到秒的Unix时间戳
+```
+
+
+
+##### 停止同步文件
+
+```
+==>  {"cmd":"stop_sync_file","data":{"id":1587982655}}
+
+<==  {"res":"stop_sync_file","code":0}
+```
+
+
+
+##### 删除文件
+
+```
+==>  {"cmd":"del_file","data":{"id":1587982655}}
+
+<==  {"res":"del_file","code":0}
+```
+
+
+
+##### 重命名文件
+
+```
+==>  {"cmd":"rename_file","data":{"id":1587982655}}
+
+<==  {"res":"rename_file","code":0}
+```
+
+
+
+##### 获取剩余容量
+
+```
+==>  {"cmd":"storage"}
+
+<==  {"res":"storage","data":{"free":512,"total":512000}}
+```
+
+
+
+##### 获取时间和时区
+
+```
+==>  {"cmd":"time"}
+
+<==  {"res":"time","data":{"time":1587982655,"time_zone":8}}
+//东8区GMT+8:00 用8表示，-8表示西8区
+
+```
+
+
+
+##### 同步时间和时区
+
+```
+==>  {"cmd":"sync_time","data":{"time":1587982655,"time_zone":8}}
+
+<==  {"res":"sync_time","code":0}
+```
+
+
+
+##### 恢复出厂设置
+
+```
+==>  {"cmd":"reset_device"}
+
+<==  {"res":"reset_device","code":0}
+```
+
+
+
+##### 获取固件版本
+
+```
+==>  {"cmd":"firmware"}
+
+<==  {"res":"firmware","code":0,"data",{"ver_name":"ver1.0","ver_code":1}}
+```
+
+
+
+##### 固件升级
+
+```
+==>  {"cmd":"upgrade_firmware","data":{"ver_code":2}} 
+//传需要升级的固件版本
+
+<==  {"res":"upgrade_firmware","code":0,status:0}  
+//status: 0 ready-for-upgrade ,1 downloading ,2 upgrading , 3 up-to-date
+//同时设备的BLE固件写入Service开始接收二进制流
+```
+
+
+
+##### 设置密码
+
+```
+==>  {"cmd":"set_psw","data":{"psw":"acb123"}}
+
+<==  {"res":"set_psw","code":0}
+```
+
+
+
+##### 密码解锁
+
+```
+==>  {"cmd":"pwd_unlock","data":{"enable":0}} 
+//enable:0 设备输入密码才能使用
+
+<==  {"res":"pwd_unlock"","code":0}
+```
+
+
+
+##### 设置U盘开启
+
+```
+==>  {"cmd":"usb_mode","data":{"enable":0}} 
+//usb_mode:0 设备开启U盘模式
+
+<==  {"res":"usb_mode"","code":0}
+```
+
+
+
+##### 重点标记
+
+```
+==>  {"cmd":"mark","data":{"ts":"1587982655"}}
+
+<==  {"res":"mark","code":0}
+```
+
+
+
+##### 设置外放
+
+```
+==>  {"cmd":"set_speeker","data":{"mute":0,volume:100}} 
+//mute:0静音,volume0-100
+
+<==  {"res":"set_speeker","code":0}
+```
+
+
+
+##### 获取外放
+
+```
+==>  {"cmd":"get_speeker"} 
+
+<==  {"res":"get_speeker","code":0,"data":{"mute":0,volume:100}}
+// volume 0~100
+```
+
+
+
+##### 设置背光
+
+```
+==>  {"cmd":"set_bri","data":{"bri":100,"time":3000}} 
+//brightness: 0-100, time 背光时间单位ms
+
+<==  {"res":"set_bri","code":0}
+```
+
+
+
+##### 获取背光
+
+```
+==>  {"cmd":"get_bri"} 
+
+<==  {"res":"get_bri","code":0,"data":{"bri":100,"time":3000}}
+```
+
+
+
+##### 设置LED灯
+
+```
+==>  {"cmd":"set_led","data":{"enable":0}} // enable:0为开启LED灯
+
+<==  {"res":"set_led","code":0}
+```
+
+
+
+##### 获取LED灯
+
+```
+==>  {"cmd":"get_led"} 
+
+<==  {"res":"get_led","code":0,"data":{"enable":0}}
+```
+
+
+
+##### 设置语言
+
+```
+==>  {"cmd":"set_lang","data":{lang":"zh-cn"}} 
+// lang: 标准语言缩写
+
+<==  {"res":"set_lang","code":0}
+```
+
+
+
+##### 获取语言
+
+```
+==>  {"cmd":"get_lang"} 
+
+<==  {"res":"get_lang","code":0,"data":{lang":"zh-cn"}}
+```
+
+
+
+##### 设置MTU
+
+```
+==>  {"cmd":"set_mtu","data":{mtu":20}}
+
+<==  {"res":"set_mtu","code":0}
+```
+
+
+
+##### 获取用户信息
+
+```
+==>  {"cmd":"get_user"}
+
+<==  {"res":"get_user","code":0,"data":{"user_id":"19231249"}}
+```
+
+
+
+##### 获取电池电量
+
+```
+==>  {"cmd":"battery"}
+
+<==  {"res":"battery","code":0,"data":{"value":100}}
+// value: 0~100
+```
+
+##### 用户绑定
+
+```
+==>  {"cmd":"bind""data":{"user_id":"12314123"}}
+
+<==  {"res":"bind","code":0}
+// user_id 字符串
+```
+
+
+
+##### 解除绑定
+
+```
+==>  {"cmd":"unbind"}
+
+<==  {"res":"unbind","code":0}
+// 先回消息，设备再解除绑定
+```
+
+
+
+##### 获取设备状态
+
+```
+==>  {"cmd":"device_stats"}
+
+<==  {"res":"device_stats","code":0,"data":{
+        "battery":100,                    //0-100
+        "bound":0,                        //0 未绑定，1已经绑定
+        "charging":0,                     //0 未充电，1正在充电
+        "storage":1024,                   //总存储容量 字节
+        "available_storage":1024,         //剩余存储 字节
+        "available_record_time":10000,    //设备预估可以录音时间 毫秒时间
+        "support_wifi_p2p":0,              //0 不支持Wi-Fi直连 1支持
+        "lang":"zh-cn",                   //lang: 标准语言缩写
+        "time_zone":8,                    //东8区GMT+8:00 用8表示，-8表示西8区
+        "time":1587982655000,             //Unix Time Stamp 毫秒
+        "audio_channel":1,                //音频通道数
+        "del_after_sync":0,               //0 同步后后不删除设备文件，1删除
+        "record_led":0,                   //0 录音中led灯不开启，1开启
+        "usb_mode":0,                     //0 U盘模式关闭，1 开启
+        "recording":0,                    //0 未正在录音，1 正在录音
+        "ble_protocol_ver":20,            //ble  协议版本 4个字节无符号
+        "sn":"ai1238189441",              //设备序列号 字符串
+        "firm_ver":"ver 1.1.2"            //设备固件版本名称 字符串
+        "privacy":0,                      //隐私设置 0关闭，1开启
+        "wifi_p2p_address":"1.2.1.2",     //Wi-Fi直连 MAC 地址
+        "app_aec":0,                      //需要app做降噪
+        "app_agc":0                       //需要app做增益
+       }
+      }
+
+```
+
+
+
+##### 开启设备 WiFi 直连
+
+```
+==>  {"cmd":"turn_on_wifi_p2p"}
+
+<==  {"res":"turn_on_wifi_p2p","code":0,"data":{"address:"0.0.0.0"}}
+// address 为Wi-Fi直连的 MAC 地址，获取后 App 进行 Wi-Fi连接，传递离线数据
+```
+
+
+
+##### 关闭设备WiFi 直连
+
+```
+==>  {"cmd":"turn_off_wifi_p2p"}
+
+<==  {"res":"turn_off_wifi_p2p","code":0}
+```
+
+
+
+##### 设置扩展-预留
+
+```
+==>  {"cmd":"set_ext","data":{"key1":1,"key2":2}}
+
+<==  {"res":"set_ext","code":0}
+```
+
+
